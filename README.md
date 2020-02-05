@@ -4,7 +4,7 @@ This repository is for DQN, one of the most famouse reinforcement learning metho
 
 __Now all you can do is to play tetris by yourself.__
 
-[Usage](http://google.com)
+[Usage](https://github.com/TakeruIto/tetris-opencv)
 
 ## TODO
 - [x] stand up
