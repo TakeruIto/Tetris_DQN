@@ -2,7 +2,9 @@
 
 This repository is for DQN, one of the most famouse reinforcement learning methods. 
 
-__Now all you can do is to play tetris by yourself.__
+~~Now all you can do is to play tetris by yourself.~~
+
+temporary you can do nothing
 
 [Usage](https://github.com/TakeruIto/tetris-opencv)
 
