@@ -7,21 +7,21 @@ CNT = 100
 
 
 class Tetris():
-    def __init__(self):
-        self.init()
+    def __init__(self, cfg):
+        self.init(cfg)
 
-    def init(self):
-        self.board = self.init_board()
+    def init(self, cfg):
+        self.board = self.init_board(cfg)
         self.minos = self.init_minos()
         self.score = self.init_score()
         self.rate = self.init_rate()
         self.chain = self.init_chain()
 
-    def init_board(self):
-        board = np.zeros((25, 16))
-        board[:, 2] = 1
-        board[:, -3] = 1
-        board[21, :] = 1
+    def init_board(self, cfg):
+        board = np.zeros((cfg.N_H+3, cfg.N_W+2))
+        board[:, 0] = 1
+        board[:, -1] = 1
+        board[-1, :] = 1
         return board
 
     def init_minos(self):
