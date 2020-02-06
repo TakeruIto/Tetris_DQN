@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-import display
+import utils.display as display
 from mino import Mino
 
 CNT = 100

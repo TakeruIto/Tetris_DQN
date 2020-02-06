@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import tkinter as tk
 
 W = 20
 H = 20
@@ -69,3 +70,52 @@ def _draw_next(canvas, minos, top_left_xy):
 def _draw_score(canvas, score, p):
     cv2.putText(canvas, str(score), p, cv2.FONT_HERSHEY_SIMPLEX,
                 1.0, (255, 255, 255), thickness=2)
+
+class View():
+
+    def __init__(self, master,cfg):
+        self.master = master
+        self.colors = cfg.COLORS
+
+        self.canvas = tk.Canvas(self.master,width=cfg.W_BOX*cfg.N_W+100,height=cfg.H_BOX*cfg.N_H,bg="black") #キャンバスの作成
+        self.canvas.pack()
+
+        for i in range(cfg.N_H): #盤面を表示
+            for j in range(cfg.N_W):
+                x = cfg.W_BOX*j
+                y = cfg.H_BOX*i
+                self.canvas.create_rectangle(x,y,x+cfg.W_BOX,y+cfg.H_BOX,outline="white")
+
+    def update(self):
+
+        for i in range(cfg.N_H): #ブロックを表示
+            for j in range(cfg.N_W):
+                x = cfg.W_BOX*j
+                y = cfg.H_BOX*i
+                if self.model.data[i][j] == 1 or self.model.data[i][j] == 2: #dataが1か2のものを表示
+                    self.canvas.create_rectangle(x,y,x+30,y+30,fill="red",outline="white",tag="block")
+
+
+
+class Application(tk.Frame):
+    def __init__(self, master,tetris,cfg):
+        super().__init__(master)
+        x = cfg.W_BOX*cfg.N_W+100
+        y = cfg.H_BOX*cfg.N_H
+        master.geometry("{}x{}".format(x,y)) #ウィンドウサイズ
+        master.title("学習用テトリス") #タイトル名
+
+        # self.model = Model() #インスタンスmodelを生成
+        # self.controller = Controller(master, self.model) #インスタンスcontrollerを生成
+        self.view = View(master, cfg) #インスタンスviewを生成
+        #
+        # self.controller.view = self.view #引数の追加
+
+class Window():
+
+    def __init__(self,tetris,cfg):
+        win = tk.Tk()
+        self.app = Application(master = win,tetris=tetris,cfg=cfg)
+
+    def mainloop(self):
+        self.app.mainloop()
