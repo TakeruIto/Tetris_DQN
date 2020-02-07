@@ -77,11 +77,10 @@ class Controller():
 
     UPDATE = 750
 
-    def __init__(self, master, tetris):
+    def __init__(self, master, tetris,view):
         self.master = master
         self.tetris = tetris
-
-        # self.master.after(self.UPDATE, self.update)
+        self.view = view
 
         self.master.bind("<Left>", self.leftRotate)
         self.master.bind("<Right>", self.rightRotate)
@@ -90,25 +89,28 @@ class Controller():
     def move(self, event):
         key = event.char
         if key == " ":
-            pass
+            self.master.after(self.UPDATE, self.update)
         elif key == "a":
-            pass
+            self.tetris.update_mino(2,"left")
         elif key == "d":
-            pass
+            self.tetris.update_mino(2,"right")
         elif key == "s":
-            pass
+            self.tetris.update_mino(2,"down")
         elif key == "w":
-            pass
+            self.tetris.update_mino(2,"quick")
+        self.view.draw()
+
 
     def leftRotate(self, event):
-        print("left")
+        self.tetris.update_mino(2,"leftRotate")
+        self.view.draw()
 
     def rightRotate(self, event):
-        print("right")
+        self.tetris.update_mino(2,"rightRotate")
+        self.view.draw()
 
     def update(self):  # ループ
 
-        # self.view.update()
 
         self.master.after(self.UPDATE, self.update)
 
@@ -125,39 +127,32 @@ class View():
         self.n_w = cfg.N_W
 
         self.canvas = tk.Canvas(self.master, width=self.w_box * (self.n_w+2) +
-                                100, height=self.h_box * (self.n_h+3), bg="black")  # キャンバスの作成
+                                100, height=self.h_box * (self.n_h+5), bg="black")  # キャンバスの作成
         self.canvas.pack()
 
         self.draw()
 
-    def update(self):
-
-        for i in range(self.n_h):  # ブロックを表示
-            for j in range(self.n_w):
-                x = self.w_box * j
-                y = self.h_box * i
-                if self.model.data[i][j] == 1 or self.model.data[i][j] == 2:  # dataが1か2のものを表示
-                    self.canvas.create_rectangle(
-                        x, y, x + 30, y + 30, fill="red", outline="white", tag="block")
-
     def draw(self):
+
+        self.canvas.delete("block")
+
         self.draw_board()
         self.draw_mino(self.tetris.minos[0])
         self.draw_next(self.tetris.minos[1:])
 
     def draw_board(self):
-        for i in range(self.n_h+3):  # ブロックを表示
+        for i in range(self.n_h+4):  # ブロックを表示
             for j in range(self.n_w+2):
                 x = self.w_box * j
                 y = self.h_box * i
                 self.canvas.create_rectangle(
                     x, y, x + self.w_box, y + self.h_box, fill="#{:02x}{:02x}{:02x}".format(
-                        *self.colors[int(self.tetris.board[i][j])]), outline="white", tag="block")
-        self.canvas.create_line(0, self.h_box*2,
-                                self.w_box*(self.n_w+2), self.h_box*2, fill='red')
+                        *self.colors[int(self.tetris.board[i][j+2])]), outline="white", tag="block")
+        self.canvas.create_line(0, self.h_box*4,
+                                self.w_box*(self.n_w+2), self.h_box*4, fill='red')
 
     def draw_mino(self, mino):
-        x, y = (mino.x - 2)*self.w_box, mino.y*self.h_box
+        x, y = (mino.x-2)*self.w_box, mino.y*self.h_box
         h, w = mino.mino.shape
         for tmpy in range(h):
             for tmpx in range(w):
@@ -188,15 +183,12 @@ class Application(tk.Frame):
     def __init__(self, master, tetris, cfg):
         super().__init__(master)
         x = cfg.W_BOX * (cfg.N_W+2) + 100
-        y = cfg.H_BOX * (cfg.N_H+3)
-        master.geometry("{}x{}".format(x, y))  # ウィンドウサイズ
-        master.title("tetris")  # タイトル名
+        y = cfg.H_BOX * (cfg.N_H+4)
+        master.geometry("{}x{}".format(x, y))
+        master.title("tetris")
 
-        # self.model = Model() #インスタンスmodelを生成
-        self.controller = Controller(master, tetris)  # インスタンスcontrollerを生成
-        self.view = View(master, tetris, cfg)  # インスタンスviewを生成
-        #
-        # self.controller.view = self.view #引数の追加
+        self.view = View(master, tetris, cfg)
+        self.controller = Controller(master, tetris,self.view)
 
 
 class Window():

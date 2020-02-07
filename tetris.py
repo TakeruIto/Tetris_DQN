@@ -11,6 +11,7 @@ class Tetris():
         self.init(cfg)
 
     def init(self, cfg):
+
         self.board = self.init_board(cfg)
         self.minos = self.init_minos()
         self.score = self.init_score()
@@ -18,14 +19,14 @@ class Tetris():
         self.chain = self.init_chain()
 
     def init_board(self, cfg):
-        board = np.zeros((cfg.N_H+3, cfg.N_W+2))
-        board[:, 0] = 1
-        board[:, -1] = 1
-        board[-1, :] = 1
+        board = np.zeros((cfg.N_H+6, cfg.N_W+6))
+        board[:, 2] = 1
+        board[:, -3] = 1
+        board[-3, :] = 1
         return board
 
     def init_minos(self):
-        return [Mino(5, 0, np.random.randint(7)) for i in range(5)]
+        return [Mino(4, 0, np.random.randint(7)) for i in range(5)]
 
     def init_score(self):
         return 0
@@ -56,17 +57,19 @@ class Tetris():
                 break
 
     def update_mino(self, cnt, key):
-        tmp_mino = self.minos[0].copy()
-        if key == 2424832:  # 左回転
-            tmp_mino.mino = np.rot90(tmp_mino.mino)
-        elif key == 2555904:  # 右回転
-            tmp_mino.mino = np.rot90(tmp_mino.mino, -1)
-        elif key == 100:  # 右移動
+        tmp_mino = self.minos[0].copyto()
+        if key == "leftRotate":  # 左回転
+            tmp_mino.degree = (tmp_mino.degree+3)%4
+            tmp_mino.mino = np.array(tmp_mino.mino_list[tmp_mino.degree])
+        elif key == "rightRotate":  # 右回転
+            tmp_mino.degree = (tmp_mino.degree+1)%4
+            tmp_mino.mino = np.array(tmp_mino.mino_list[tmp_mino.degree])
+        elif key == "right":  # 右移動
             tmp_mino.x += 1
-        elif key == 97:  # 左移動
+        elif key == "left":  # 左移動
             tmp_mino.x -= 1
-        elif cnt % CNT == CNT-1 or key == 115 or key == 119:
-            if key == 119:
+        elif cnt % CNT == CNT-1 or key == "down" or key == "quick":
+            if key == "quick":
                 while not tmp_mino.collision(self.board):
                     tmp_mino.y += 1
             else:
@@ -77,9 +80,7 @@ class Tetris():
                 self.minos = self.minos[1:]
                 self.minos.append(Mino(5, 0, np.random.randint(7)))
         if not tmp_mino.collision(self.board):
-            self.minos[0].x = tmp_mino.x
-            self.minos[0].y = tmp_mino.y
-            self.minos[0].mino = tmp_mino.mino
+            self.minos[0].copyfrom(tmp_mino)
 
         return self.check_dead()
 
@@ -89,9 +90,10 @@ class Tetris():
         self.check_line()
 
     def check_line(self):
-        tmp = self.board[:21, 3:13]
+        h, w = self.board.shape
+        tmp = self.board[:h-3, 3:w-3]
         tmp = tmp[np.any(tmp == 0, axis=1)]
-        a = 21-tmp.shape[0]
+        a = (h-3)-tmp.shape[0]
 
         if a > 0:
             self.chain += 1
@@ -106,7 +108,7 @@ class Tetris():
             self.rate = self.init_rate()
         zero = np.zeros((a, 10))
         tmp = np.concatenate([zero, tmp])
-        self.board[:21, 3:13] = tmp
+        self.board[:h-3, 3:w-3] = tmp
 
     def check_dead(self):
         return np.any(self.board[1, 3:13] > 0)
