@@ -2,117 +2,65 @@ import numpy as np
 import cv2
 import tkinter as tk
 
-W = 20
-H = 20
-COLORS = [[0, 0, 0],
-          [128, 128, 128],
-          [0, 191, 255],
-          [65, 105, 225],
-          [255, 165, 0],
-          [0, 255, 0],
-          [220, 20, 60],
-          [186, 85, 211],
-          [255, 255, 0],
-          ]
-
-
-def draw(board, minos, score):
-    h, w = board.shape
-    canvas = np.zeros((H * h, W * w + 100, 3))
-    for y in range(h):
-        for x in range(w):
-            cv2.rectangle(canvas, (x * W, y * H), ((x + 1) * W, (y + 1) * H),
-                          COLORS[int(board[y][x])], thickness=-1)
-            cv2.rectangle(canvas, (x * W, y * H), ((x + 1) * W, (y + 1) * H),
-                          (100, 100, 100), thickness=1)
-
-    _draw_mino(canvas, minos[0])
-    _draw_next(canvas, minos[1:], (W * w + 10, 10))
-    _draw_score(canvas, score, (W * w + 10, 360))
-    cv2.line(canvas, (0, H * 2), (W * w, H * 2),
-             color=(255, 0, 0), thickness=2)
-    canvas = canvas.astype(np.uint8)
-    canvas = cv2.cvtColor(canvas, cv2.COLOR_RGB2BGR)
-    cv2.imshow("tetris", canvas)
-
-
-def _draw_mino(canvas, mino):
-    x, y = mino.x - 2, mino.y
-    h, w = mino.mino.shape
-    for tmpy in range(h):
-        for tmpx in range(w):
-            if mino.mino[tmpy][tmpx]:
-                c = COLORS[mino.type_ + 2]
-                cv2.rectangle(canvas, ((x + tmpx) * W, (y + tmpy) * H), ((x + tmpx + 1) * W, (y + tmpy + 1) * H),
-                              color=c, thickness=-1)
-                cv2.rectangle(canvas, ((x + tmpx) * W, (y + tmpy) * H), ((x + tmpx + 1) * W, (y + tmpy + 1) * H),
-                              (100, 100, 100), thickness=1)
-
-
-def _draw_next(canvas, minos, top_left_xy):
-    sW, sH = 10, 10
-    x, y = top_left_xy
-    cv2.rectangle(canvas, (x, y), (x + 80, y + 320),
-                  (255, 255, 255), thickness=1)
-    for i, mino in enumerate(minos):
-        h, w = mino.mino.shape
-        offsetx = int(40 - sW * (w / 2))
-        offsety = int(40 - sH * (h / 2))
-        for tmpy in range(h):
-            for tmpx in range(w):
-                if mino.mino[tmpy][tmpx]:
-                    c = COLORS[mino.type_ + 2]
-                    cv2.rectangle(canvas, (x + offsetx + tmpx * sW, y + offsety + i * 80 + tmpy * sH),
-                                  (x + offsetx + (tmpx + 1) * sW, y +
-                                   offsety + i * 80 + (tmpy + 1) * sH),
-                                  color=c, thickness=-1)
-
-
-def _draw_score(canvas, score, p):
-    cv2.putText(canvas, str(score), p, cv2.FONT_HERSHEY_SIMPLEX,
-                1.0, (255, 255, 255), thickness=2)
-
 
 class Controller():
 
-    UPDATE = 750
-
-    def __init__(self, master, tetris,view):
+    def __init__(self, master, tetris, view, cfg):
         self.master = master
         self.tetris = tetris
         self.view = view
+        self.UPDATE_TIME = cfg.UPDATE_TIME
 
-        self.master.bind("<Left>", self.leftRotate)
-        self.master.bind("<Right>", self.rightRotate)
-        self.master.bind("<Key>", self.move)
+        self.bindid_left = self.master.bind("<Left>", self.leftRotate)
+        self.bindid_right = self.master.bind("<Right>", self.rightRotate)
+        self.bindid_key = self.master.bind("<Key>", self.move)
+
+        self.loop = self.master.after(self.UPDATE_TIME, self.update)
 
     def move(self, event):
         key = event.char
-        if key == " ":
-            self.master.after(self.UPDATE, self.update)
-        elif key == "a":
-            self.tetris.update_mino(2,"left")
+        flag = False
+        if key == "a":
+            flag = self.tetris.update_mino("left")
         elif key == "d":
-            self.tetris.update_mino(2,"right")
+            flag = self.tetris.update_mino("right")
         elif key == "s":
-            self.tetris.update_mino(2,"down")
+            flag = self.tetris.update_mino("down")
         elif key == "w":
-            self.tetris.update_mino(2,"quick")
+            flag = self.tetris.update_mino("quick")
         self.view.draw()
 
+        if flag:
+            self.finish_loop()
 
     def leftRotate(self, event):
-        self.tetris.update_mino(2,"leftRotate")
+        flag = self.tetris.update_mino("leftRotate")
         self.view.draw()
+
+        if flag:
+            self.finish_loop()
 
     def rightRotate(self, event):
-        self.tetris.update_mino(2,"rightRotate")
+        flag = self.tetris.update_mino("rightRotate")
         self.view.draw()
 
+        if flag:
+            self.finish_loop()
+
     def update(self):  # ループ
+        flag = self.tetris.update_mino("down")
+        self.view.draw()
 
+        self.loop = self.master.after(self.UPDATE_TIME, self.update)
 
-        self.master.after(self.UPDATE, self.update)
+        if flag:
+            self.finish_loop()
+
+    def finish_loop(self):
+        self.master.after_cancel(self.loop)
+        self.master.unbind("<Left>", self.bindid_left)
+        self.master.unbind("<Right>", self.bindid_right)
+        self.master.unbind("<Key>", self.bindid_key)
 
 
 class View():
@@ -126,8 +74,8 @@ class View():
         self.n_h = cfg.N_H
         self.n_w = cfg.N_W
 
-        self.canvas = tk.Canvas(self.master, width=self.w_box * (self.n_w+2) +
-                                100, height=self.h_box * (self.n_h+5), bg="black")  # キャンバスの作成
+        self.canvas = tk.Canvas(self.master, width=self.w_box * (self.n_w + 2) +
+                                100, height=self.h_box * (self.n_h + 5), bg="black")  # キャンバスの作成
         self.canvas.pack()
 
         self.draw()
@@ -139,31 +87,32 @@ class View():
         self.draw_board()
         self.draw_mino(self.tetris.minos[0])
         self.draw_next(self.tetris.minos[1:])
+        self.draw_score()
 
     def draw_board(self):
-        for i in range(self.n_h+4):  # ブロックを表示
-            for j in range(self.n_w+2):
+        for i in range(self.n_h + 4):  # ブロックを表示
+            for j in range(self.n_w + 2):
                 x = self.w_box * j
                 y = self.h_box * i
                 self.canvas.create_rectangle(
                     x, y, x + self.w_box, y + self.h_box, fill="#{:02x}{:02x}{:02x}".format(
-                        *self.colors[int(self.tetris.board[i][j+2])]), outline="white", tag="block")
-        self.canvas.create_line(0, self.h_box*4,
-                                self.w_box*(self.n_w+2), self.h_box*4, fill='red')
+                        *self.colors[int(self.tetris.board[i][j + 2])]), outline="white", tag="block")
+        self.canvas.create_line(0, self.h_box * 4,
+                                self.w_box * (self.n_w + 2), self.h_box * 4, fill='red')
 
     def draw_mino(self, mino):
-        x, y = (mino.x-2)*self.w_box, mino.y*self.h_box
+        x, y = (mino.x - 2) * self.w_box, mino.y * self.h_box
         h, w = mino.mino.shape
         for tmpy in range(h):
             for tmpx in range(w):
                 if mino.mino[tmpy][tmpx]:
                     c = self.colors[mino.type_ + 2]
                     self.canvas.create_rectangle(
-                        x+tmpx*self.w_box, y+tmpy*self.h_box, x+(tmpx+1)*self.w_box, y+(tmpy+1)*self.h_box, fill="#{:02x}{:02x}{:02x}".format(*c), outline="white", tag="block")
+                        x + tmpx * self.w_box, y + tmpy * self.h_box, x + (tmpx + 1) * self.w_box, y + (tmpy + 1) * self.h_box, fill="#{:02x}{:02x}{:02x}".format(*c), outline="white", tag="block")
 
     def draw_next(self, minos):
         sW, sH = 10, 10
-        x, y = (self.n_w+2)*self.w_box+10, 10
+        x, y = (self.n_w + 2) * self.w_box + 10, 10
         self.canvas.create_rectangle((x, y), (x + 80, y + 320), fill="white")
         for i, mino in enumerate(minos):
             h, w = mino.mino.shape
@@ -178,17 +127,22 @@ class View():
                                                       offsety + i * 80 + (tmpy + 1) * sH),
                                                      fill="#{:02x}{:02x}{:02x}".format(*c))
 
+    def draw_score(self):
+        x, y = (self.n_w + 2) * self.w_box + 50, 380
+        self.canvas.create_text(x, y, text='{}'.format(
+            self.tetris.score), fill="white", tag="block")
+
 
 class Application(tk.Frame):
     def __init__(self, master, tetris, cfg):
         super().__init__(master)
-        x = cfg.W_BOX * (cfg.N_W+2) + 100
-        y = cfg.H_BOX * (cfg.N_H+4)
+        x = cfg.W_BOX * (cfg.N_W + 2) + 100
+        y = cfg.H_BOX * (cfg.N_H + 4)
         master.geometry("{}x{}".format(x, y))
         master.title("tetris")
 
         self.view = View(master, tetris, cfg)
-        self.controller = Controller(master, tetris,self.view)
+        self.controller = Controller(master, tetris, self.view, cfg)
 
 
 class Window():
