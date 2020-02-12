@@ -11,15 +11,17 @@ class Tetris():
         self.init(cfg)
 
     def init(self, cfg):
+        self.n_w = cfg.SYSTEM.N_W
+        self.n_h = cfg.SYSTEM.N_H
 
-        self.board = self.init_board(cfg)
+        self.board = self.init_board()
         self.minos = self.init_minos()
         self.score = self.init_score()
         self.rate = self.init_rate()
         self.chain = self.init_chain()
 
-    def init_board(self, cfg):
-        board = np.zeros((cfg.N_H + 6, cfg.N_W + 6))
+    def init_board(self):
+        board = np.zeros((self.n_h + 7, self.n_w + 6))
         board[:, 2] = 1
         board[:, -3] = 1
         board[-3, :] = 1
@@ -117,3 +119,6 @@ class Tetris():
 
     def check_dead(self):
         return np.any(self.board[3, 3:13] > 0)
+
+    def get_state(self):
+        return self.board[4:4 + self.n_h, 3:3 + self.n_w], self.minos[0].type_
