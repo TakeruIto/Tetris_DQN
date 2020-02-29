@@ -120,4 +120,4 @@ class Controller():
         mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 0])
         masks.append(mask)
 
-        return np.array(masks, dtype=np.bool)
+        return torch.tensor(masks, dtype=torch.bool)
