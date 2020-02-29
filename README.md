@@ -10,6 +10,6 @@ temporary you can do nothing
 
 ## TODO
 - [x] stand up
-- [ ] modify the code for imprementation of DQN
+- [x] modify the code for imprementation of DQN
 - [ ] imprement DQN
 - [ ] some modification 
