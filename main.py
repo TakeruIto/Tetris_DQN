@@ -15,7 +15,7 @@ def main():
     cfg = get_cfg()
     args = get_args()
     tetris = Tetris(cfg)
-    window = Window(tetris, cfg,args)
+    window = Window(tetris, cfg, args)
     window.mainloop()
     # tetris.start()
 

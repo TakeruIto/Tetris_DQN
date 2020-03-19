@@ -13,7 +13,6 @@ class Controller():
 
         self.tetris = tetris
         self.view = view
-        self.masks = self.get_masks(self.n_w)
         self.UPDATE_TIME = cfg.SYSTEM.UPDATE_TIME
 
         self.model = get_model(cfg).double()
@@ -25,8 +24,7 @@ class Controller():
             brd, mino = self.tetris.get_state()
             state = torch.tensor(np.append(brd.flatten(), mino))
             with torch.no_grad():
-                action = self.model(state)[self.masks[mino]]
-                action = location[self.masks[mino]][action.argmax()]
+                action = self.tetris.get_masked_action(self.model(state), mino)
                 deg = action // (self.n_w + 1)
                 loc = action % (self.n_w + 1)
                 flag = self.update(deg, loc)
@@ -73,51 +71,3 @@ class Controller():
     def update_canvas_and_rest(self):
         time.sleep(0.5)
         self.view.master.update()
-
-    def get_masks(self, n_w):
-        len_mask = n_w + 1
-        masks = []
-        mask = []
-        mask.extend([0, 0] + [1] * (len_mask - 4) + [0, 0])
-        mask.extend([1, 1] + [1] * (len_mask - 4) + [1, 0])
-        mask.extend([0, 0] + [1] * (len_mask - 4) + [0, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 1])
-        masks.append(mask)
-        mask = []
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [0, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 0])
-        mask.extend([0, 0] + [1] * (len_mask - 4) + [1, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 0])
-        masks.append(mask)
-        mask = []
-        mask.extend([0, 0] + [1] * (len_mask - 4) + [1, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [0, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 0])
-        masks.append(mask)
-        mask = []
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [0, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 0])
-        mask.extend([0, 0] + [1] * (len_mask - 4) + [1, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 0])
-        masks.append(mask)
-        mask = []
-        mask.extend([0, 0] + [1] * (len_mask - 4) + [1, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [0, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 0])
-        masks.append(mask)
-        mask = []
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [0, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 0])
-        mask.extend([0, 0] + [1] * (len_mask - 4) + [1, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 0])
-        masks.append(mask)
-        mask = []
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 0])
-        mask.extend([0, 1] + [1] * (len_mask - 4) + [1, 0])
-        masks.append(mask)
-
-        return torch.tensor(masks, dtype=torch.bool)

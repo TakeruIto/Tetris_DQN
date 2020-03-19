@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,8 +7,15 @@ import torch.nn.functional as F
 def get_model(cfg):
     size_state = cfg.MODEL.SIZE_STATE
     size_hidden = cfg.MODEL.SIZE_HIDDEN
-    size_action = (cfg.SYSTEM.N_W + 1) * 4
-    return Model(size_state, size_hidden, size_action)
+    size_action = cfg.MODEL.SIZE_ACTION
+    model = Model(size_state, size_hidden, size_action)
+    model_weights = cfg.MODEL.WEIGHTS
+    if os.path.exists(model_weights):
+        print("load weights from {}".format(model_weights))
+        param = torch.load('weight.pth')
+        model.load_state_dict(param)
+
+    return model
 
 
 class Model(nn.Module):
