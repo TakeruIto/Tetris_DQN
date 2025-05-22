@@ -80,7 +80,7 @@ class Tetris():
             # Use configured game over reward
             return self.get_state(), config.REWARD_GAME_OVER, True
 
-        reward = config.REWARD_SURVIVE_STEP  # Small reward for surviving the step
+        reward = 0.0  # Initialize reward for the step
         done = False
 
         # 1. Apply player's action (movement, rotation, or initiating a drop)
@@ -94,9 +94,9 @@ class Tetris():
         if action == ACTION_DROP_HARD:
             # Piece is already at its final y position (just above collision point)
             # Now, finalize it on the board.
-            lines_cleared, score_gained_from_clear = self._update_board_and_score() # Now returns score too
-            reward += score_gained_from_clear 
-            reward += config.REWARD_HARD_DROP # Add reward for hard drop action
+            lines_cleared, score_gained_this_event = self._update_board_and_score()
+            reward += score_gained_this_event # This now includes REWARD_PIECE_PLACED
+            reward += config.REWARD_HARD_DROP # Add specific reward for hard drop action
             if self._check_game_over():
                 done = True
                 reward = config.REWARD_GAME_OVER # Override reward if game over
@@ -107,26 +107,25 @@ class Tetris():
         if self.current_piece.collision(self.board):
             self.current_piece.y -= 1 # Revert fall if collision
             # Piece has landed or is blocked by another piece after an action
-            lines_cleared, score_gained_from_clear = self._update_board_and_score() # Finalize piece, check lines, spawn new
-            reward += score_gained_from_clear
+            lines_cleared, score_gained_this_event = self._update_board_and_score() # Finalize piece, check lines, spawn new
+            reward += score_gained_this_event # This now includes REWARD_PIECE_PLACED
             if self._check_game_over():
                 done = True
                 reward = config.REWARD_GAME_OVER # Override reward if game over
         else:
             # Piece successfully moved down one step (either by soft drop or gravity)
-            # Apply per-step cost if action wasn't a hard drop leading to finalization
-            reward += config.REWARD_PER_STEP 
-            # No collision yet, game continues.
-            # If action was ACTION_DROP_SOFT, this counts as the soft drop.
-            # No collision yet, game continues.
-            # If action was ACTION_DROP_SOFT, this counts as the soft drop.
-            # If action was IDLE, this is the gravity step.
-            # If action was MOVE/ROTATE, this is gravity after the move/rotate.
+            # No reward change here; reward remains 0 if no piece is placed.
             pass
 
         if self.game_over: # Should be set by _check_game_over if applicable
-            done = True
-        
+            done = True # Ensure done is true if game_over flag was set
+            # If game over happened during _update_board_and_score, reward is already REWARD_GAME_OVER
+            # If it happened due to _check_game_over after a hard drop, it's also set.
+            # This is a final check.
+            if reward != config.REWARD_GAME_OVER: # If not already set by landing logic
+                 reward = config.REWARD_GAME_OVER
+
+
         return self.get_state(), reward, done
 
     def _apply_action(self, action):
@@ -185,45 +184,48 @@ class Tetris():
         h, w = self.current_piece.mino.shape
         self.board[self.current_piece.y:self.current_piece.y+h, self.current_piece.x:self.current_piece.x+w] += self.current_piece.mino
         
-        lines_cleared = self._check_line_and_clear() # Renamed for clarity
-        score_gained = 0
+        current_event_reward = config.REWARD_PIECE_PLACED # Start with piece placed reward
+        lines_cleared = self._check_line_and_clear()
         
         if lines_cleared > 0:
             self.chain += 1
             if self.chain >= 3: # Combo bonus
-                self.rate *= 1.1 # This rate affects actual game score, not AI reward directly here.
+                self.rate *= 1.1 # This rate affects actual game score.
             
-            # Use configured rewards for AI, actual score update for game
+            # Add line clear rewards to current_event_reward
             if lines_cleared == 1:
-                score_gained = config.REWARD_LINE_CLEAR_SINGLE
+                current_event_reward += config.REWARD_LINE_CLEAR_SINGLE
                 self.score += self.rate * 10 # Original scoring for single
             elif lines_cleared == 2:
-                score_gained = config.REWARD_LINE_CLEAR_DOUBLE
+                current_event_reward += config.REWARD_LINE_CLEAR_DOUBLE
                 self.score += self.rate * 30 # Original scoring for double
             elif lines_cleared == 3:
-                score_gained = config.REWARD_LINE_CLEAR_TRIPLE
+                current_event_reward += config.REWARD_LINE_CLEAR_TRIPLE
                 self.score += self.rate * 60 # Original scoring for triple
             elif lines_cleared >= 4: # Tetris and above
-                score_gained = config.REWARD_LINE_CLEAR_TETRIS
+                current_event_reward += config.REWARD_LINE_CLEAR_TETRIS
                 self.score += self.rate * 100 # Original scoring for tetris
-
         else: # Line clear miss, reset chain and rate
             self.chain = self._init_chain()
             self.rate = self._init_rate()
 
         # Prepare next piece
         if len(self.minos) <= 1: # Should not happen if minos are replenished
-             self.minos.extend([Mino(5,0,np.random.randint(7)) for _ in range(5)])
+             self.minos.extend([Mino(config.INITIAL_MINO_X, config.INITIAL_MINO_Y, np.random.randint(7)) for _ in range(config.NUM_NEXT_PIECES_DISPLAY + 1)])
 
         self.minos.pop(0) # Remove the piece that just landed
         if not self.minos: # Replenish if somehow empty
-             self.minos.extend([Mino(5,0,np.random.randint(7)) for _ in range(5)])
-        self.minos.append(Mino(5, 0, np.random.randint(7))) # Add a new piece to the queue
+             self.minos.extend([Mino(config.INITIAL_MINO_X, config.INITIAL_MINO_Y, np.random.randint(7)) for _ in range(config.NUM_NEXT_PIECES_DISPLAY + 1)])
+        
+        # Ensure there are enough pieces in the queue for next_pieces and a new current_piece
+        while len(self.minos) < config.NUM_NEXT_PIECES_DISPLAY + 1:
+            self.minos.append(Mino(config.INITIAL_MINO_X, config.INITIAL_MINO_Y, np.random.randint(7)))
+
 
         self.current_piece = self.minos[0]
-        self.next_pieces = self.minos[1:5] # Ensure we always have a few next pieces visible
+        self.next_pieces = self.minos[1:config.NUM_NEXT_PIECES_DISPLAY + 1]
         
-        return lines_cleared, score_gained
+        return lines_cleared, current_event_reward
 
 
     def _check_line_and_clear(self): # Renamed from _check_line

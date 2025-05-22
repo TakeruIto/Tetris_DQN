@@ -64,4 +64,23 @@ NUM_NEXT_PIECES_DISPLAY = 4
 # LOG_LEVEL = "INFO" # For a logging setup (e.g., "DEBUG", "INFO", "WARNING")
 # PRINT_BOARD_ON_STEP = False # If true, print board to console for debugging without UI
 # PRINT_REWARD_INFO = False # If true, print detailed reward info per step
+
+
+# --- DQN Agent Hyperparameters ---
+DQN_LEARNING_RATE = 0.001
+DQN_DISCOUNT_FACTOR = 0.99  # gamma
+DQN_EPSILON_START = 1.0
+DQN_EPSILON_END = 0.01
+DQN_EPSILON_DECAY_RATE = 0.9995 # Slower decay
+DQN_REPLAY_BUFFER_SIZE = 20000
+DQN_BATCH_SIZE = 64
+DQN_TARGET_UPDATE_FREQ_EPISODES = 5 # In episodes
+DQN_MODEL_SAVE_FREQ_EPISODES = 50   # In episodes
+DQN_MODEL_PATH = "models/dqn_tetris.weights.h5"
+
+# --- Training Settings ---
+NUM_TRAINING_EPISODES = 2000
+MAX_STEPS_PER_TRAINING_EPISODE = 3000
+
+
 print("config.py loaded") # For debugging to ensure it's imported

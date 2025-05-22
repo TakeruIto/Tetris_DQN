@@ -14,6 +14,7 @@ from tetris import (
     ACTION_IDLE
 )
 import display # For rendering the game
+from play_dqn import run_dqn_evaluation # Add this import
 
 # Key mappings for human play
 KEY_MAP = {
@@ -133,19 +134,27 @@ def main():
     parser.add_argument(
         "--mode",
         type=str,
-        choices=["human", "ai"],
+        choices=["human", "ai", "dqn"], # Add "dqn"
         default="human",
-        help="Game mode: 'human' for manual play, 'ai' for AI example."
+        help="Game mode: 'human' for manual play, 'ai' for AI example, 'dqn' for trained DQN agent."
     )
     args = parser.parse_args()
 
-    tetris_game = Tetris()
+    # tetris_game = Tetris() # This might only be needed for human/ai_example
 
     if args.mode == "human":
+        tetris_game = Tetris() # Initialize here
         human_play(tetris_game)
     elif args.mode == "ai":
+        tetris_game = Tetris() # Initialize here
         ai_play_example(tetris_game)
+    elif args.mode == "dqn":
+        run_dqn_evaluation() # Call the imported function
 
+    # cv2.destroyAllWindows() # This might be redundant if play_dqn.py handles its own windows.
+    # If run_dqn_evaluation() calls destroyAllWindows(), then this one is not strictly needed when mode is dqn.
+    # For human and ai modes, it's still relevant.
+    # Let's keep it, as cv2.destroyAllWindows() is safe to call multiple times or if no windows exist.
     cv2.destroyAllWindows()
 
 
