@@ -1,6 +1,6 @@
 # Tetris_DQN
 
-This repository is for DQN, one of the most famouse reinforcement learning methods. 
+This repository is for DQN, one of the most famous reinforcement learning methods.
 
 ~~Now all you can do is to play tetris by yourself.~~
 
@@ -10,6 +10,6 @@ temporary you can do nothing
 
 ## TODO
 - [x] stand up
-- [x] modify the code for imprementation of DQN
-- [ ] imprement DQN
+- [x] modify the code for implementation of DQN
+- [ ] implement DQN
 - [ ] some modification 
